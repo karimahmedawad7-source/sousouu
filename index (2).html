@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" prefix="og:  http://ogp.me/ns#">
+
+<head prefix="og:  http://ogp.me/ns#">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sousou</title>
+    <meta name="author" content="kareem ahmed">
+    <meta name="description" content="سوسو لحل الجفاف العاطفي">
+    <meta name="keywords" content="سوسو ,sousou, الجفاف العاطفي">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="face.jpeg">
+
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="sousou" />
+    <meta property="og:description" content="سوسو لحل الجفاف العاطفي" />
+    <meta property="og:image" content="face.jpeg" />
+    <meta property="og:url" content="https://www.example.com/" />
+    <meta property="og:site_name" content="example.com" />
+
+    <meta name="twitter:title" content="سوسو">
+    <meta name="twitter:description" content="سوسو لحل الجفاف العاطفي">
+    <meta name="twitter:image" content="face.jpeg">
+    <meta name="twitter:card" content="summary">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Henny+Penny&family=Kablammo&family=Knewave&family=Vibes&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- تسجيل الدخول بجوجل + ارسال الايميل -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
+</head>
+
+<body>
+    <header>
+        sousou.com
+    </header>
+    <hr>
+
+    <main>
+        <div class="top">
+            <img src="face.jpeg" alt="sousou" width="300">
+            <p>سوسو لحل الجفاف العاطفي عند جميع الشباب</p>
+            <p>جميع الخدمات مجانيه</p>
+            <button type="button" id="voiceBtn" class="btn">اضغط هنا لسماع صوت سوسو</button>
+        </div>
+
+        <section>
+            <!-- تسجيل الدخول بجوجل -->
+            <div id="loginBox">
+                <p dir="rtl">سجّل دخولك بجوجل الاول عشان تقدر تحجز</p>
+                <div id="googleBtn"></div>
+            </div>
+            <p dir="rtl" id="userInfo" hidden></p>
+
+            <p dir="rtl">للحجز يرجى ملئ البيانات التاليه</p>
+
+            <form id="bookForm" dir="rtl" novalidate>
+                <ul>
+                    <li>
+                        <h4>اسم الدلع</h4>
+                        <input type="text" id="nick" placeholder="اسم الدلع" maxlength="5" required>
+                        <small id="nickErr" class="err" hidden>لازم يكون 5 حروف بالظبط</small>
+                    </li>
+                    <li>
+                        <h4>الطول الخاص به</h4>
+                        <input type="text" id="height" placeholder="الطول الخاص به" required>
+                    </li>
+                    <li>
+                        <h4>عنوان المنزل</h4>
+                        <input type="text" id="address" placeholder="عنوان المنزل" required>
+                    </li>
+                    <li>
+                        <h4>ساعات الفراغ</h4>
+                        <input type="time" id="free" placeholder="ساعات الفراغ" required>
+                    </li>
+                    <li>
+                        <h4>ميعاد النوم</h4>
+                        <input type="time" id="sleep" placeholder="ميعاد النوم" required>
+                    </li>
+                </ul>
+                <div class="center">
+                    <button type="submit" id="submitBtn" class="btn" disabled>الارسال</button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        /* ====== اعدادات لازم تعدلها (شوف الشرح في الرد) ====== */
+        const GOOGLE_CLIENT_ID = "642024991617-h93tgcacbuai5n65fd1ci7ki3688h3k8.apps.googleusercontent.com";
+        const EMAILJS_PUBLIC_KEY = "NfAEoJSVY3EiGGH2X";
+        const EMAILJS_SERVICE_ID = "service_ff4vxl7";
+        const EMAILJS_TEMPLATE_ID = "template_9oxhh9g";
+        /* ===================================================== */
+
+        const $ = (id) => document.getElementById(id);
+        const form = $("bookForm");
+        const submitBtn = $("submitBtn");
+        const nick = $("nick"), heightEl = $("height"), address = $("address"),
+              free = $("free"), sleep = $("sleep");
+
+        let userEmail = null;
+
+        /* ---------- زرار الصوت ---------- */
+        const voice = new Audio("sousou_voice.ogg");
+        $("voiceBtn").addEventListener("click", () => {
+            voice.currentTime = 0;
+            voice.play().catch(() => alert("تعذر تشغيل الصوت"));
+        });
+
+        /* ---------- التحقق من البيانات ---------- */
+        function nickValid() {
+            return /^\p{L}{5}$/u.test(nick.value.trim());
+        }
+        function timeValid(el) {
+            return /^([01]\d|2[0-3]):[0-5]\d$/.test(el.value);
+        }
+        function formValid() {
+            return !!userEmail &&
+                nickValid() &&
+                heightEl.value.trim() !== "" &&
+                address.value.trim() !== "" &&
+                timeValid(free) &&
+                timeValid(sleep);
+        }
+        function refresh() {
+            const v = nick.value.trim();
+            $("nickErr").hidden = v === "" || nickValid();
+            submitBtn.disabled = !formValid();
+        }
+        form.addEventListener("input", refresh);
+        form.addEventListener("change", refresh);
+
+        /* ---------- تنسيق الساعة (مثلا 09:30 م) ---------- */
+        function fmtTime(t) {
+            let [h, m] = t.split(":").map(Number);
+            const p = h >= 12 ? "م" : "ص";
+            h = h % 12 || 12;
+            return `${h}:${String(m).padStart(2, "0")} ${p}`;
+        }
+
+        /* ---------- تسجيل الدخول بجوجل ---------- */
+        function parseJwt(token) {
+            const b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+            const json = decodeURIComponent(atob(b64).split("").map(
+                (c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join(""));
+            return JSON.parse(json);
+        }
+        function onGoogleLogin(resp) {
+            const info = parseJwt(resp.credential);
+            userEmail = info.email;
+            $("loginBox").hidden = true;
+            $("userInfo").hidden = false;
+            $("userInfo").textContent = "تم تسجيل الدخول: " + userEmail;
+            refresh();
+        }
+        window.addEventListener("load", () => {
+            const wait = setInterval(() => {
+                if (window.google && google.accounts) {
+                    clearInterval(wait);
+                    google.accounts.id.initialize({
+                        client_id: GOOGLE_CLIENT_ID,
+                        callback: onGoogleLogin
+                    });
+                    google.accounts.id.renderButton($("googleBtn"),
+                        { theme: "filled_blue", size: "large", text: "signin_with", locale: "ar" });
+                }
+            }, 200);
+        });
+
+        /* ---------- الارسال ---------- */
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!formValid()) return;
+
+            const nickV = nick.value.trim();
+            const message =
+                `تم الحجز من الساعه ${fmtTime(free.value)} ` +
+                `ستاتي سوسو اليك يا ${nickV} عند ${address.value.trim()} ` +
+                `وستذهب قبل الساعه ${fmtTime(sleep.value)} ` +
+                `يا ذو ${heightEl.value.trim()}`;
+
+            submitBtn.disabled = true;
+            try {
+                emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+                await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                    to_email: userEmail,
+                    message: message
+                });
+                alert(`تم الحجز ${nickV} سيتم ارسال المعلومات الي الايميل ${userEmail}`);
+                form.reset();
+            } catch (err) {
+                console.error(err);
+                alert("حصلت مشكلة في ارسال الايميل، حاول مرة تانية");
+            }
+            refresh();
+        });
+    </script>
+</body>
+
+</html>
